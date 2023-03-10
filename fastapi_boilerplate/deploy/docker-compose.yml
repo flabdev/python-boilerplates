@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+    image: fission_project_template:${FISSION_PROJECT_TEMPLATE_VERSION:-latest}
+    restart: always
+    env_file:
+    - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FISSION_PROJECT_TEMPLATE_HOST: 0.0.0.0
+      FISSION_PROJECT_TEMPLATE_DB_HOST: fission_project_template-db
+      FISSION_PROJECT_TEMPLATE_DB_PORT: 3306
+      FISSION_PROJECT_TEMPLATE_DB_USER: fission_project_template
+      FISSION_PROJECT_TEMPLATE_DB_PASS: fission_project_template
+      FISSION_PROJECT_TEMPLATE_DB_BASE: fission_project_template
+  sonarqube:
+    image: sonarqube
+    container_name: fast-API-sonarqube-fission
+    expose:
+    - 9000
+    ports:
+    - "127.0.0.1:9000:9000"
+    volumes:
+    - sonarqube_conf:/opt/sonarqube/conf
+    - sonarqube_data:/opt/sonarqube/data
+    - sonarqube_extensions:/opt/sonarqube/extensions
+    - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+  db:
+    image: bitnami/mysql:8.0.30
+    hostname: fission_project_template-db
+    restart: always
+    ports:
+    - 43306:3306
+    expose:
+    - 3306
+    environment:
+      MYSQL_ROOT_USER: "fission_project_template"
+      MYSQL_ROOT_PASSWORD: "fission_project_template"
+      MYSQL_DATABASE: "fission_project_template"
+      MYSQL_AUTHENTICATION_PLUGIN: "mysql_native_password"
+    healthcheck:
+      test: mysqladmin ping -h localhost
+      interval: 10s
+      timeout: 5s
+      retries: 40
+    volumes:
+    - fission_project_template-db-data:/bitnami/mysql/data
+
+
+
+volumes:
+  fission_project_template-db-data:
+    name: fission_project_template-db-data
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_bundled-plugins:
